@@ -38,7 +38,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'base',
+    'account',
+    'rest_framework',
     'shop_app',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+
 ]
 
 MIDDLEWARE = [
@@ -125,9 +130,30 @@ STATIC_URL = 'static/'
 MAILERS = {
     'default': {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+        "HOST": "smtp.gmail.com",
+        "PORT": 587,
+        "USE_TLS": True,
+        "USER": "your_email@gmail.com",
+        "PASSWORD": "your_app_password",
+        "FROM_EMAIL": "your_email@gmail.com",
     },
 }
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR/ 'media'
+
 EMAIL_EXPIRE_TIME = 3
 PHONE_EXPIRE_TIME = 2
+
+AUTH_USER_MODEL = 'account.CustomUser'
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),   # Access token muddati
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),      # Refresh token muddati
+    'ROTATE_REFRESH_TOKENS': True,                    # Har safar yangilashda yangi token
+    'BLACKLIST_AFTER_ROTATION': True,                 # Eski refresh tokenni avtomatik bloklash
+}
+
 
