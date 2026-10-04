@@ -6,7 +6,6 @@ from datetime import timedelta, datetime
 from shop.settings import EMAIL_EXPIRE_TIME, PHONE_EXPIRE_TIME
 import random
 from rest_framework_simplejwt.tokens import RefreshToken
-from .utils import send_verification_email
 # Create your models here.
 
 NEW, CODE_VERIFY, DONE, PHOTO_DONE = ('new', 'code_verify', 'done','photo_done')
@@ -84,9 +83,6 @@ class CustomUser(AbstractUser, BaseModel):
             user=self,
             verify_type=verify_type
         )
-        if verify_type == VIA_EMAIL and self.email:
-            send_verification_email(self.email, code)
-        return code
     
     def save(self, *args, **kwargs):
         self.check_username()
@@ -108,7 +104,7 @@ class Verify(BaseModel):
     used = models.BooleanField(default=False)
     expire_time = models.DateTimeField()
     code = models.CharField(max_length=4)
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='codes')
 
     def __str__(self):
         return f"{self.user.username}----{self.code}"
