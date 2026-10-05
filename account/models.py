@@ -140,7 +140,7 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser):
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, null=False, blank=False)
     phone_number = models.CharField(max_length=13, unique=True)
     username = models.CharField(max_length=30, unique=True)
     is_active = models.BooleanField(default=True)
@@ -155,27 +155,25 @@ class CustomUser(AbstractBaseUser):
         return self.username
 
 
-class VerifyCode(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='codes')
-    code = models.CharField(max_length=6)
-    used = models.BooleanField(default=False)
-    expiration_time = models.DateTimeField(default=lambda: timezone.now() + timezone.timedelta(minutes=5))
-
-    def __str__(self):
-        return f"{self.user.username} - {self.code}"
-
-
 class Verify(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='verifies')
     code = models.CharField(max_length=6)
     used = models.BooleanField(default=False)
-    expiration_time = models.DateTimeField(default=lambda: timezone.now() + timezone.timedelta(minutes=5))
+    expiration_time = models.DateTimeField(default=timezone.now)
+
+    def save(self, *args, **kwargs):
+        if not self.expiration_time:
+            self.expiration_time = timezone.now() + timedelta(minutes=5)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.user.username} - {self.code}"
 
 
-    
+  
+
+
+
 
 
 

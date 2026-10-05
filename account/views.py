@@ -1,54 +1,34 @@
-from django.shortcuts import render
-from .models import NEW, CODE_VERIFY, CustomUser, VerifyCode
-from rest_framework.generics import CreateAPIView, GenericAPIView, RetrieveAPIView
-from .serializers import SignUpSerializer, VerifySerializer
-
-from rest_framework import permissions, status
-from datetime import datetime
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
-class SignUpView(CreateAPIView):
-    serializer_class = SignUpSerializer
-    queryset = CustomUser.objects.all()
-
-
-class VerifyView(GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = VerifySerializer
-    queryset = CustomUser.objects.all()
-
+class LoginView(APIView):
     def post(self, request):
-        code = request.data.get('code')
-        user = request.user
+        username = request.data.get("username")
+        password = request.data.get("password")
 
-        verify = user.codes.filter(
-            code=code,
-            used=False,
-            expiration_time__gte=datetime.now()
-        ).first()
-
-        if verify:
-            verify.used = True
-            verify.save()
-            user.auth_status = CODE_VERIFY  
-            user.save()
-            return Response({'message': 'Tasdiq muvaffaqiyatli!'}, status=status.HTTP_200_OK)
-
-        return Response({"error": "Kod noto'g'ri yoki muddati o'tgan"}, status=status.HTTP_400_BAD_REQUEST)
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            }, status=status.HTTP_200_OK)
+        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class ProfileView(RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    queryset = CustomUser.objects.all()
 
-    def get(self, request):
-        user = request.user
-        data = {
-            'email': user.email,
-            'phone_number': user.phone_number,
-            'username': user.username
-        }
-        return Response(data)
-
-
+class LogoutView(APIView):
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh")
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"message": "Successfully logged out"}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)

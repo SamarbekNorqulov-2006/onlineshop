@@ -158,3 +158,9 @@ SIMPLE_JWT = {
 
 
 AUTH_USER_MODEL = 'shop.CustomUser'
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    )
+}
