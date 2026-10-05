@@ -1,11 +1,12 @@
 from django.db import models 
-from django.contrib.auth.models import AbstractUser 
+from django.contrib.auth.models import AbstractUser , BaseUserManager, AbstractBaseUser
 import uuid
 from base.models import BaseModel
 from datetime import timedelta, datetime
 from shop.settings import EMAIL_EXPIRE_TIME, PHONE_EXPIRE_TIME
 import random
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils import timezone
 # Create your models here.
 
 NEW, CODE_VERIFY, DONE, PHOTO_DONE = ('new', 'code_verify', 'done','photo_done')
@@ -116,7 +117,64 @@ class Verify(BaseModel):
             self.expire_time = datetime.now() +timedelta(minutes=PHONE_EXPIRE_TIME)
         super().save(*args, **kwargs)
     
-    
+
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, phone_number, username, password):
+        if not email:
+            raise ValueError("Email kiritilishi shart")
+        user = self.model(
+            email=self.normalize_email(email),
+            phone_number=phone_number,
+            username=username
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, phone_number, username, password):
+        user = self.create_user(email, phone_number, username, password)
+        user.is_admin = True
+        user.save(using=self._db)
+        return user
+
+
+class CustomUser(AbstractBaseUser):
+    email = models.EmailField(unique=True)
+    phone_number = models.CharField(max_length=13, unique=True)
+    username = models.CharField(max_length=30, unique=True)
+    is_active = models.BooleanField(default=True)
+    is_admin = models.BooleanField(default=False)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['phone_number', 'username']
+
+    objects = CustomUserManager()
+
+    def __str__(self):
+        return self.username
+
+
+class VerifyCode(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='codes')
+    code = models.CharField(max_length=6)
+    used = models.BooleanField(default=False)
+    expiration_time = models.DateTimeField(default=lambda: timezone.now() + timezone.timedelta(minutes=5))
+
+    def __str__(self):
+        return f"{self.user.username} - {self.code}"
+
+
+class Verify(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='verifies')
+    code = models.CharField(max_length=6)
+    used = models.BooleanField(default=False)
+    expiration_time = models.DateTimeField(default=lambda: timezone.now() + timezone.timedelta(minutes=5))
+
+    def __str__(self):
+        return f"{self.user.username} - {self.code}"
+
+
     
 
 

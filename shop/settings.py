@@ -38,11 +38,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'base',
-    'account',
     'rest_framework',
     'shop_app',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'shop',
+    'account',
 
 ]
 
@@ -145,7 +146,6 @@ MEDIA_ROOT = BASE_DIR/ 'media'
 EMAIL_EXPIRE_TIME = 3
 PHONE_EXPIRE_TIME = 2
 
-AUTH_USER_MODEL = 'account.CustomUser'
 
 from datetime import timedelta
 
@@ -157,3 +157,4 @@ SIMPLE_JWT = {
 }
 
 
+AUTH_USER_MODEL = 'shop.CustomUser'
